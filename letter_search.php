@@ -7,11 +7,7 @@ const MAX_RESULTS = 100;
 const MIN_QUERY_LEN = 2;
 const SOURCE_URL_BASE = 'https://georgeeliotarchive.org/items/browse';
 
-/*
- * IMPORTANT: set this to the Omeka Collection ID for the letters collection.
- * Leave as '' only while testing; otherwise the search can span unrelated items.
- */
-const LETTER_COLLECTION_ID = '';
+const LETTER_COLLECTION_ID = '84';
 
 function respond(int $status, array $data): void {
     http_response_code($status);
