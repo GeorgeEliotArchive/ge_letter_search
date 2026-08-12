@@ -1,203 +1,546 @@
 <div class="container">
-  <p>Search George Eliot's letters by keyword, sender, recipient, date, title, or letter text.</p>
-
-  <form id="letterSearchForm" class="form-inline">
-    <div class="form-group">
-      <label for="letterSearchTerm"><strong>Search Term:</strong></label>
-      <input type="text" class="form-control" id="letterSearchTerm" placeholder="Enter search term" required />
-
-      <label for="letterSearchField"><strong> Search In:</strong></label>
-      <select id="letterSearchField" class="form-control">
-        <option value="all">All fields</option>
-        <option value="text">Letter text</option>
-        <option value="sender">Sender</option>
-        <option value="recipient">Recipient</option>
-        <option value="date">Date</option>
-        <option value="title">Title</option>
-      </select>
-
-      <button type="submit" class="btn btn-primary">Search</button>
-    </div>
-  </form>
-
-  <div class="form-group" style="text-align:left; margin-top:12px;">
-    <strong>Order by Date:</strong>
-    <button type="button" id="letterDateAsc" class="btn btn-secondary">Ascending</button>
-    <button type="button" id="letterDateDesc" class="btn btn-secondary">Descending</button>
-    &nbsp;&nbsp;
-    <strong>Order by Sender:</strong>
-    <button type="button" id="letterSenderAsc" class="btn btn-secondary">A-Z</button>
-  </div>
-
-  <p id="letterResultCount"></p>
-
-  <div style="overflow-x:auto;">
-    <table class="table table-striped" style="border-style:groove; border-color:black; background-color:bisque; table-layout:fixed; width:100%;">
-      <colgroup>
-        <col style="width:120px;" />
-        <col style="width:150px;" />
-        <col style="width:150px;" />
-        <col style="width:150px;" />
-        <col style="width:130px;" />
-        <col />
-      </colgroup>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Sender</th>
-          <th>Recipient</th>
-          <th>Title</th>
-          <th>Place</th>
-          <th>Letter Text</th>
-        </tr>
-      </thead>
-      <tbody id="letterData"></tbody>
-    </table>
-  </div>
+<p>Here on the George Eliot Letters page, researchers can search the contents of Eliot's correspondence.</p>
+<form id="searchForm" class="form-inline">
+<div class="form-group"><label for="searchTerm"> <strong>Search Term:</strong> </label> <input type="text" class="form-control" id="searchTerm" name="searchTerm" placeholder="Enter search term" required="" /> <label for="searchField" style="margin-left: 10px;"> <strong>Search In:</strong> </label><select id="searchField" class="form-control">
+<option value="all">All Fields</option>
+<option value="text">Letter Text</option>
+<option value="sender">Sender</option>
+<option value="recipient">Recipient</option>
+<option value="date">Date</option>
+<option value="title">Title</option>
+</select><button type="submit" class="btn btn-primary"> Search </button></div>
+</form>
+<div class="form-group" style="text-align: left;"><label> <br /><strong>Order by Date:</strong> </label> <button type="button" id="orderByDateAsc" class="btn btn-secondary"> Ascending </button> <button type="button" id="orderByDateDesc" class="btn btn-secondary"> Descending </button></div>
+<div class="form-group" style="text-align: left;"><label> <br /><strong>Order by Sender:</strong> </label> <button type="button" id="orderBySenderAsc" class="btn btn-secondary"> A–Z </button> <button type="button" id="orderBySenderDesc" class="btn btn-secondary"> Z–A </button></div>
+<p id="resultCount"></p>
+<table class="table table-striped" style="border-style: groove; border-color: black; background-color: bisque; table-layout: fixed; width: 100%;"><colgroup> <col width="110px" /> <col width="140px" /> <col width="140px" /> <col width="160px" /> <col width="120px" /> <col /> </colgroup>
+<thead>
+<tr>
+<th>Date</th>
+<th>Sender</th>
+<th>Recipient</th>
+<th>Title</th>
+<th>Place</th>
+<th>Letter Text</th>
+</tr>
+</thead>
+<tbody id="data"></tbody>
+</table>
 </div>
-
-<style>
-.letter-expand-toggle {
-  display:inline-block;
-  margin-top:4px;
-  font-size:.9em;
-  color:#337ab7;
-  cursor:pointer;
-  text-decoration:none;
-}
-.letter-expand-toggle:hover { text-decoration:underline; }
-.letter-meta { display:block; margin-top:5px; font-size:.88em; }
-</style>
-
+<p>
 <script>
+
 document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("letterSearchForm");
-  const input = document.getElementById("letterSearchTerm");
-  const field = document.getElementById("letterSearchField");
-  const count = document.getElementById("letterResultCount");
-  const body = document.getElementById("letterData");
+
+  const form =
+    document.getElementById("searchForm");
+
+  const searchInput =
+    document.getElementById("searchTerm");
+
+  const searchField =
+    document.getElementById("searchField");
+
+  const resultCount =
+    document.getElementById("resultCount");
+
+  const dataBody =
+    document.getElementById("data");
+
 
   let currentResults = [];
 
+
   function safeText(value) {
-    return value == null ? "" : String(value);
+
+    return value == null
+      ? ""
+      : String(value);
+
   }
 
-  function addTextCell(tr, value) {
-    const td = document.createElement("td");
-    td.textContent = safeText(value);
-    tr.appendChild(td);
-    return td;
-  }
 
   function renderRows(rows) {
-    body.innerHTML = "";
+
+    dataBody.innerHTML = "";
+
 
     rows.forEach(function (row) {
-      const tr = document.createElement("tr");
-      addTextCell(tr, row.date);
-      addTextCell(tr, row.sender);
-      addTextCell(tr, row.recipient);
-      addTextCell(tr, row.title);
-      addTextCell(tr, row.place);
 
-      const tdText = document.createElement("td");
-      const textSpan = document.createElement("span");
-      textSpan.textContent = safeText(row.snippet);
-      tdText.appendChild(textSpan);
+      const tr =
+        document.createElement("tr");
+
+
+      /*
+       * Date
+       */
+
+      const tdDate =
+        document.createElement("td");
+
+      tdDate.textContent =
+        safeText(row.date);
+
+
+      /*
+       * Sender
+       */
+
+      const tdSender =
+        document.createElement("td");
+
+      tdSender.textContent =
+        safeText(row.sender);
+
+
+      /*
+       * Recipient
+       */
+
+      const tdRecipient =
+        document.createElement("td");
+
+      tdRecipient.textContent =
+        safeText(row.recipient);
+
+
+      /*
+       * Title
+       */
+
+      const tdTitle =
+        document.createElement("td");
+
+      tdTitle.textContent =
+        safeText(row.title);
+
+
+      /*
+       * Place
+       */
+
+      const tdPlace =
+        document.createElement("td");
+
+      tdPlace.textContent =
+        safeText(row.place);
+
+
+      /*
+       * Letter text
+       */
+
+      const tdText =
+        document.createElement("td");
+
+
+      const snippetSpan =
+        document.createElement("span");
+
+      snippetSpan.textContent =
+        safeText(row.snippet);
+
+      tdText.appendChild(snippetSpan);
+
+
+      /*
+       * Show full letter
+       */
 
       if (row.full_text) {
-        const toggle = document.createElement("a");
-        toggle.href = "#";
-        toggle.className = "letter-expand-toggle";
-        toggle.textContent = " [show full letter]";
-        toggle.addEventListener("click", function (e) {
-          e.preventDefault();
-          const expanded = tdText.classList.toggle("expanded");
-          textSpan.textContent = expanded ? safeText(row.full_text) : safeText(row.snippet);
-          toggle.textContent = expanded ? " [show less]" : " [show full letter]";
-        });
-        tdText.appendChild(toggle);
+
+        const expandLink =
+          document.createElement("a");
+
+        expandLink.href = "#";
+
+        expandLink.className =
+          "expand-toggle";
+
+        expandLink.textContent =
+          " [show full letter]";
+
+
+        expandLink.addEventListener(
+          "click",
+          function (e) {
+
+            e.preventDefault();
+
+            const isExpanded =
+              tdText.classList.toggle(
+                "expanded"
+              );
+
+
+            if (isExpanded) {
+
+              snippetSpan.textContent =
+                safeText(row.full_text);
+
+              expandLink.textContent =
+                " [show less]";
+
+            }
+
+            else {
+
+              snippetSpan.textContent =
+                safeText(row.snippet);
+
+              expandLink.textContent =
+                " [show full letter]";
+
+            }
+
+          }
+        );
+
+
+        tdText.appendChild(
+          expandLink
+        );
+
       }
+
+
+      /*
+       * Source
+       */
 
       if (row.source) {
-        const source = document.createElement("span");
-        source.className = "letter-meta";
-        source.textContent = "Source: " + safeText(row.source);
+
+        const source =
+          document.createElement("span");
+
+        source.className =
+          "letter-source";
+
+        source.textContent =
+          "Source: " +
+          safeText(row.source);
+
         tdText.appendChild(source);
+
       }
 
-      if (row.item_url && /^https?:\/\//i.test(row.item_url)) {
-        const link = document.createElement("a");
-        link.className = "letter-meta";
-        link.href = row.item_url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = "View item";
-        tdText.appendChild(link);
+
+      /*
+       * Link to Omeka item
+       */
+
+      if (row.item_url) {
+
+        const itemLink =
+          document.createElement("a");
+
+        itemLink.href =
+          safeText(row.item_url);
+
+        itemLink.target =
+          "_blank";
+
+        itemLink.rel =
+          "noopener noreferrer";
+
+        itemLink.className =
+          "letter-item-link";
+
+        itemLink.textContent =
+          "View item";
+
+        tdText.appendChild(
+          document.createElement("br")
+        );
+
+        tdText.appendChild(
+          itemLink
+        );
+
       }
 
+
+      tr.appendChild(tdDate);
+      tr.appendChild(tdSender);
+      tr.appendChild(tdRecipient);
+      tr.appendChild(tdTitle);
+      tr.appendChild(tdPlace);
       tr.appendChild(tdText);
-      body.appendChild(tr);
+
+      dataBody.appendChild(tr);
+
     });
+
   }
+
+
+  /*
+   * Date sorting
+   */
 
   function dateValue(value) {
-    const cleaned = String(value || "").replace(/[^\d-]/g, "");
-    return cleaned || "9999-99-99";
+
+    const cleaned =
+      String(value || "")
+        .replace(/[^\d-]/g, "");
+
+    return cleaned ||
+      "9999-99-99";
+
   }
 
-  form.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    const q = input.value.trim();
 
-    if (q.length < 2) {
-      alert("Please enter at least 2 characters to search.");
-      return;
-    }
+  /*
+   * Search
+   */
 
-    count.textContent = "Searching...";
-    body.innerHTML = "";
-    currentResults = [];
+  form.addEventListener(
+    "submit",
+    async function (event) {
 
-    try {
-      const url = "/letter-search.php?q=" + encodeURIComponent(q) +
-                  "&field=" + encodeURIComponent(field.value);
-      const response = await fetch(url, {
-        method: "GET",
-        headers: { "Accept": "application/json" }
-      });
-      const payload = await response.json();
+      event.preventDefault();
 
-      if (!response.ok) throw new Error(payload.error || "Search failed.");
 
-      currentResults = Array.isArray(payload.results) ? payload.results : [];
-      renderRows(currentResults);
+      const searchTerm =
+        searchInput.value.trim();
 
-      let message = payload.count + " results found.";
-      if (payload.limited) {
-        message += " Showing limited results only. Please refine your search.";
+      const field =
+        searchField.value;
+
+
+      if (searchTerm.length < 2) {
+
+        alert(
+          "Please enter at least 2 characters to search."
+        );
+
+        return;
+
       }
-      count.textContent = message;
-    } catch (error) {
-      console.error(error);
-      count.textContent = "Error loading results. Please try again.";
+
+
+      resultCount.textContent =
+        "Searching...";
+
+      dataBody.innerHTML = "";
+
+      currentResults = [];
+
+
+      try {
+
+        const url =
+          "/letter-search.php?q=" +
+          encodeURIComponent(searchTerm) +
+          "&field=" +
+          encodeURIComponent(field);
+
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              "Accept": "application/json"
+            }
+          });
+        const rawText = await response.text();
+
+        console.log("Server response:", rawText);
+
+        let payload;
+
+        try {
+          payload = JSON.parse(rawText);
+        } catch (e) {
+          throw new Error(
+            "Server did not return JSON. HTTP status: " +
+            response.status +
+            ". Response: " +
+            rawText.substring(0, 200)
+          );
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            payload.error || "Search failed."
+          );
+        }
+
+
+        currentResults =
+          Array.isArray(
+            payload.results
+          )
+            ? payload.results
+            : [];
+
+
+        renderRows(
+          currentResults
+        );
+
+
+        let msg =
+          `${payload.count} results found.`;
+
+
+        if (payload.limited) {
+
+          msg +=
+            " Showing limited results only. Please refine your search.";
+
+        }
+
+
+        resultCount.textContent =
+          msg;
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
+        resultCount.textContent =
+          "Error loading results. Please try again.";
+
+      }
+
     }
-  });
+  );
 
-  document.getElementById("letterDateAsc").addEventListener("click", function () {
-    currentResults.sort((a, b) => dateValue(a.date).localeCompare(dateValue(b.date)));
-    renderRows(currentResults);
-  });
 
-  document.getElementById("letterDateDesc").addEventListener("click", function () {
-    currentResults.sort((a, b) => dateValue(b.date).localeCompare(dateValue(a.date)));
-    renderRows(currentResults);
-  });
+  /*
+   * Date ascending
+   */
 
-  document.getElementById("letterSenderAsc").addEventListener("click", function () {
-    currentResults.sort((a, b) => safeText(a.sender).localeCompare(safeText(b.sender)));
-    renderRows(currentResults);
-  });
+  document
+    .getElementById(
+      "orderByDateAsc"
+    )
+    .addEventListener(
+      "click",
+      function () {
+
+        currentResults.sort(
+          function (a,b) {
+
+            return dateValue(a.date)
+              .localeCompare(
+                dateValue(b.date)
+              );
+
+          }
+        );
+
+        renderRows(
+          currentResults
+        );
+
+      }
+    );
+
+
+  /*
+   * Date descending
+   */
+
+  document
+    .getElementById(
+      "orderByDateDesc"
+    )
+    .addEventListener(
+      "click",
+      function () {
+
+        currentResults.sort(
+          function (a,b) {
+
+            return dateValue(b.date)
+              .localeCompare(
+                dateValue(a.date)
+              );
+
+          }
+        );
+
+        renderRows(
+          currentResults
+        );
+
+      }
+    );
+
+
+  /*
+   * Sender A-Z
+   */
+
+  document
+    .getElementById(
+      "orderBySenderAsc"
+    )
+    .addEventListener(
+      "click",
+      function () {
+
+        currentResults.sort(
+          function (a,b) {
+
+            return safeText(a.sender)
+              .localeCompare(
+                safeText(b.sender),
+                undefined,
+                {
+                  sensitivity:"base"
+                }
+              );
+
+          }
+        );
+
+        renderRows(
+          currentResults
+        );
+
+      }
+    );
+
+
+  /*
+   * Sender Z-A
+   */
+
+  document
+    .getElementById(
+      "orderBySenderDesc"
+    )
+    .addEventListener(
+      "click",
+      function () {
+
+        currentResults.sort(
+          function (a,b) {
+
+            return safeText(b.sender)
+              .localeCompare(
+                safeText(a.sender),
+                undefined,
+                {
+                  sensitivity:"base"
+                }
+              );
+
+          }
+        );
+
+        renderRows(
+          currentResults
+        );
+
+      }
+    );
+
 });
+
 </script>
+</p>
