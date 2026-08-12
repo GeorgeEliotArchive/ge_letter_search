@@ -1,0 +1,203 @@
+<div class="container">
+  <p>Search George Eliot's letters by keyword, sender, recipient, date, title, or letter text.</p>
+
+  <form id="letterSearchForm" class="form-inline">
+    <div class="form-group">
+      <label for="letterSearchTerm"><strong>Search Term:</strong></label>
+      <input type="text" class="form-control" id="letterSearchTerm" placeholder="Enter search term" required />
+
+      <label for="letterSearchField"><strong> Search In:</strong></label>
+      <select id="letterSearchField" class="form-control">
+        <option value="all">All fields</option>
+        <option value="text">Letter text</option>
+        <option value="sender">Sender</option>
+        <option value="recipient">Recipient</option>
+        <option value="date">Date</option>
+        <option value="title">Title</option>
+      </select>
+
+      <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+  </form>
+
+  <div class="form-group" style="text-align:left; margin-top:12px;">
+    <strong>Order by Date:</strong>
+    <button type="button" id="letterDateAsc" class="btn btn-secondary">Ascending</button>
+    <button type="button" id="letterDateDesc" class="btn btn-secondary">Descending</button>
+    &nbsp;&nbsp;
+    <strong>Order by Sender:</strong>
+    <button type="button" id="letterSenderAsc" class="btn btn-secondary">A-Z</button>
+  </div>
+
+  <p id="letterResultCount"></p>
+
+  <div style="overflow-x:auto;">
+    <table class="table table-striped" style="border-style:groove; border-color:black; background-color:bisque; table-layout:fixed; width:100%;">
+      <colgroup>
+        <col style="width:120px;" />
+        <col style="width:150px;" />
+        <col style="width:150px;" />
+        <col style="width:150px;" />
+        <col style="width:130px;" />
+        <col />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Sender</th>
+          <th>Recipient</th>
+          <th>Title</th>
+          <th>Place</th>
+          <th>Letter Text</th>
+        </tr>
+      </thead>
+      <tbody id="letterData"></tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+.letter-expand-toggle {
+  display:inline-block;
+  margin-top:4px;
+  font-size:.9em;
+  color:#337ab7;
+  cursor:pointer;
+  text-decoration:none;
+}
+.letter-expand-toggle:hover { text-decoration:underline; }
+.letter-meta { display:block; margin-top:5px; font-size:.88em; }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("letterSearchForm");
+  const input = document.getElementById("letterSearchTerm");
+  const field = document.getElementById("letterSearchField");
+  const count = document.getElementById("letterResultCount");
+  const body = document.getElementById("letterData");
+
+  let currentResults = [];
+
+  function safeText(value) {
+    return value == null ? "" : String(value);
+  }
+
+  function addTextCell(tr, value) {
+    const td = document.createElement("td");
+    td.textContent = safeText(value);
+    tr.appendChild(td);
+    return td;
+  }
+
+  function renderRows(rows) {
+    body.innerHTML = "";
+
+    rows.forEach(function (row) {
+      const tr = document.createElement("tr");
+      addTextCell(tr, row.date);
+      addTextCell(tr, row.sender);
+      addTextCell(tr, row.recipient);
+      addTextCell(tr, row.title);
+      addTextCell(tr, row.place);
+
+      const tdText = document.createElement("td");
+      const textSpan = document.createElement("span");
+      textSpan.textContent = safeText(row.snippet);
+      tdText.appendChild(textSpan);
+
+      if (row.full_text) {
+        const toggle = document.createElement("a");
+        toggle.href = "#";
+        toggle.className = "letter-expand-toggle";
+        toggle.textContent = " [show full letter]";
+        toggle.addEventListener("click", function (e) {
+          e.preventDefault();
+          const expanded = tdText.classList.toggle("expanded");
+          textSpan.textContent = expanded ? safeText(row.full_text) : safeText(row.snippet);
+          toggle.textContent = expanded ? " [show less]" : " [show full letter]";
+        });
+        tdText.appendChild(toggle);
+      }
+
+      if (row.source) {
+        const source = document.createElement("span");
+        source.className = "letter-meta";
+        source.textContent = "Source: " + safeText(row.source);
+        tdText.appendChild(source);
+      }
+
+      if (row.item_url && /^https?:\/\//i.test(row.item_url)) {
+        const link = document.createElement("a");
+        link.className = "letter-meta";
+        link.href = row.item_url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "View item";
+        tdText.appendChild(link);
+      }
+
+      tr.appendChild(tdText);
+      body.appendChild(tr);
+    });
+  }
+
+  function dateValue(value) {
+    const cleaned = String(value || "").replace(/[^\d-]/g, "");
+    return cleaned || "9999-99-99";
+  }
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const q = input.value.trim();
+
+    if (q.length < 2) {
+      alert("Please enter at least 2 characters to search.");
+      return;
+    }
+
+    count.textContent = "Searching...";
+    body.innerHTML = "";
+    currentResults = [];
+
+    try {
+      const url = "/letter-search.php?q=" + encodeURIComponent(q) +
+                  "&field=" + encodeURIComponent(field.value);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { "Accept": "application/json" }
+      });
+      const payload = await response.json();
+
+      if (!response.ok) throw new Error(payload.error || "Search failed.");
+
+      currentResults = Array.isArray(payload.results) ? payload.results : [];
+      renderRows(currentResults);
+
+      let message = payload.count + " results found.";
+      if (payload.limited) {
+        message += " Showing limited results only. Please refine your search.";
+      }
+      count.textContent = message;
+    } catch (error) {
+      console.error(error);
+      count.textContent = "Error loading results. Please try again.";
+    }
+  });
+
+  document.getElementById("letterDateAsc").addEventListener("click", function () {
+    currentResults.sort((a, b) => dateValue(a.date).localeCompare(dateValue(b.date)));
+    renderRows(currentResults);
+  });
+
+  document.getElementById("letterDateDesc").addEventListener("click", function () {
+    currentResults.sort((a, b) => dateValue(b.date).localeCompare(dateValue(a.date)));
+    renderRows(currentResults);
+  });
+
+  document.getElementById("letterSenderAsc").addEventListener("click", function () {
+    currentResults.sort((a, b) => safeText(a.sender).localeCompare(safeText(b.sender)));
+    renderRows(currentResults);
+  });
+});
+</script>
